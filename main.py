@@ -33,12 +33,18 @@ class User(UserMixin, db.Model):
 
 @app.route('/')
 def home():
-    return render_template("index.html")
+    return render_template("index.html", logged_in = current_user.is_authenticated)
 
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+
+        # Check if email already exists
+        if User.query.filter_by(email=request.form['email']).first():
+            flash("You've already signed up with that email, log in instead!", 'danger')
+            return redirect(url_for('login'))
+
         new_user = User(
             email=request.form.get('email'),
             name=request.form.get('name'),
@@ -78,13 +84,13 @@ def login():
             login_user(user)
             return redirect(url_for('secrets', name=user.name))
 
-    return render_template("login.html")
+    return render_template("login.html", logged_in = current_user.is_authenticated)
 
 
 @app.route('/secrets/<name>')
 @login_required
 def secrets(name):
-    return render_template("secrets.html", name=name)
+    return render_template("secrets.html", name=current_user.name, logged_in = True)
 
 
 @app.route('/logout')
